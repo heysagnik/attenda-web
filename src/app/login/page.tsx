@@ -1,36 +1,37 @@
 "use client";
-import { useState, useEffect } from "react"
-import Image from "next/image"
-import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { useState, useEffect } from "react";
+import Image from "next/image";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { supabase } from "@/lib/supabaseClient"
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { supabase } from "@/lib/supabaseClient";
 
-export const description =
-  "A login page with two columns. The first column has the login form with email and password. There's a Forgot your passwork link and a link to sign up if you do not have an account. The second column has a cover image."
+// A login page with two columns. The first column has the login form with email and password.
+// There's a Forgot your password link and a link to sign up if you do not have an account.
+// The second column has a cover image.
 
 function Login() {
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const router = useRouter()
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const router = useRouter();
 
   useEffect(() => {
     // Ensure the router is available
     if (!router) return;
   }, [router]);
 
-  const handleLogin = async (e: { preventDefault: () => void; }) => {
-    e.preventDefault()
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
+  const handleLogin = async (e: { preventDefault: () => void }) => {
+    e.preventDefault();
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
-      alert(error.message)
+      alert(error.message);
     } else {
-      router.push("/")
+      router.push("/");
     }
-  }
+  };
 
   return (
     <div className="w-full h-screen lg:grid lg:grid-cols-2">
@@ -75,7 +76,6 @@ function Login() {
             <Button type="submit" className="w-full">
               Login
             </Button>
-            
           </form>
         </div>
       </div>
@@ -89,7 +89,7 @@ function Login() {
         />
       </div>
     </div>
-  )
+  );
 }
 
-export default Login
+export default Login;

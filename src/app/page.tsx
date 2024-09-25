@@ -17,7 +17,6 @@ import QRScanner from "@/components/QRScanner"; // Adjust the import path as nec
 
 export default function Home() {
   const [isLoading, setIsLoading] = useState(true);
-  const [ setQrData] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [registrationNumber, setRegistrationNumber] = useState("");
   const [name, setName] = useState("");
@@ -37,8 +36,7 @@ export default function Home() {
     checkUser();
   }, [router]);
 
-  const handleScanSuccess = (data) => {
-    setQrData(data);
+  const handleScanSuccess = (data: string) => {
     const parts = data.split(' ');
     if (parts.length >= 2) {
       setRegistrationNumber(parts[0]);
@@ -49,7 +47,7 @@ export default function Home() {
     setIsDialogOpen(true);
   };
 
-  const handleScanError = (err) => {
+  const handleScanError = (err: Error) => {
     console.error(err);
   };
 

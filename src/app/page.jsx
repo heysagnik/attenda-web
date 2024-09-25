@@ -17,7 +17,7 @@ import QRScanner from "@/components/QRScanner"; // Adjust the import path as nec
 
 export default function Home() {
   const [isLoading, setIsLoading] = useState(true);
-  const [qrData, setQrData] = useState("");
+  const [ setQrData] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [registrationNumber, setRegistrationNumber] = useState("");
   const [name, setName] = useState("");

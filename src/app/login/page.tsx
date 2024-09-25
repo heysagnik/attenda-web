@@ -32,13 +32,6 @@ function Login() {
     }
   }
 
-  const handleGoogleLogin = async () => {
-    const { error } = await supabase.auth.signInWithOAuth({ provider: 'google' })
-    if (error) {
-      alert(error.message)
-    }
-  }
-
   return (
     <div className="w-full h-screen lg:grid lg:grid-cols-2">
       <div className="flex items-center justify-center py-12">

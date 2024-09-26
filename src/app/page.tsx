@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import {
@@ -12,15 +12,19 @@ import {
   AlertDialogFooter,
   AlertDialogCancel,
   AlertDialogAction,
-} from "@/components/ui/alert-dialog"; // Adjust the import path as necessary
-import QRScanner from "@/components/QRScanner"; // Adjust the import path as necessary
+} from "@/components/ui/alert-dialog";
+import QRScanner from "@/components/QRScanner";
+import { User } from "@supabase/supabase-js";
 
 export default function Home() {
   const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isMessageDialogOpen, setIsMessageDialogOpen] = useState(false);
   const [registrationNumber, setRegistrationNumber] = useState("");
   const [name, setName] = useState("");
   const [message, setMessage] = useState("");
+  const [user, setUser] = useState<User | null>(null);
+  const qrScannerRef = useRef<{ restart: () => void } | null>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -29,6 +33,7 @@ export default function Home() {
       if (!session) {
         router.push("/login");
       } else {
+        setUser(session.user);
         setIsLoading(false);
       }
     };
@@ -41,18 +46,18 @@ export default function Home() {
     if (parts.length >= 2) {
       setRegistrationNumber(parts[0]);
       setName(parts.slice(1).join(' '));
+      setIsDialogOpen(true);
     } else {
       console.log("Invalid QR Code content:", data);
+      setMessage("Invalid QR Code. Please try again.");
+      setIsMessageDialogOpen(true);
     }
-    setIsDialogOpen(true);
   };
 
   const handleScanError = (err: Error) => {
     console.error(err);
-  };
-
-  const handleCloseDialog = () => {
-    setIsDialogOpen(false);
+    setMessage("Error scanning QR Code. Please try again.");
+    setIsMessageDialogOpen(true);
   };
 
   const handleConfirm = async () => {
@@ -60,11 +65,12 @@ export default function Home() {
       const { data, error: selectError } = await supabase
         .from('students')
         .select('registration_number')
-        .eq('registration_number', registrationNumber);
+        .eq('registration_number', registrationNumber)
+        .single();
 
-      if (selectError) throw selectError;
+      if (selectError && selectError.code !== 'PGRST116') throw selectError;
 
-      if (data.length > 0) {
+      if (data) {
         setMessage("Already marked present");
       } else {
         const [firstName, lastName] = name.split(' ');
@@ -72,40 +78,83 @@ export default function Home() {
           .from('students')
           .insert([{ registration_number: registrationNumber, first_name: firstName, last_name: lastName }]);
         if (insertError) throw insertError;
-        setMessage("QR Code confirmed and details updated!");
+        setMessage("Attendance marked successfully!");
       }
     } catch (error) {
       console.error("Error updating details:", error);
       setMessage("Failed to update details.");
     }
     setIsDialogOpen(false);
-    alert(message);
+    setIsMessageDialogOpen(true);
+  };
+
+  const handleMessageDialogClose = () => {
+    setIsMessageDialogOpen(false);
+    if (qrScannerRef.current) {
+      qrScannerRef.current.restart();
+    }
   };
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return <div className="flex items-center justify-center h-screen">Loading...</div>;
   }
 
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <QRScanner onScanSuccess={handleScanSuccess} onScanError={handleScanError} />
+    <div className="flex flex-col min-h-screen">
+      <nav className="bg-blue-600 p-4 text-white">
+        <div className="container mx-auto flex justify-between items-center">
+          <h1 className="text-2xl font-bold">Attenda</h1>
+          <div className="flex items-center">
+            <span className="mr-2">{user?.email}</span>
+            <button
+              onClick={() => supabase.auth.signOut()}
+              className="bg-white text-blue-600 px-4 py-2 rounded"
+            >
+              Logout
+            </button>
+          </div>
+        </div>
+      </nav>
+
+      <main className="flex-grow flex items-center justify-center bg-gray-100">
+        <div className="w-full max-w-md p-4">
+          <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+            <div className="p-4">
+              <h2 className="text-xl font-semibold mb-4 text-center">Scan QR Code</h2>
+              <div className="aspect-square relative">
+                <QRScanner ref={qrScannerRef} onScanSuccess={handleScanSuccess} onScanError={handleScanError} />
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+
       <AlertDialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <AlertDialogTrigger asChild>
-          <button style={{ display: "none" }}>Open</button>
-        </AlertDialogTrigger>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>QR Code Details</AlertDialogTitle>
+            <AlertDialogTitle>Confirm Attendance</AlertDialogTitle>
             <AlertDialogDescription>
-              <div>
-                <p><strong>Registration Number:</strong> {registrationNumber}</p>
-                <p><strong>Name:</strong> {name}</p>
-              </div>
+              <p><strong>Registration Number:</strong> {registrationNumber}</p>
+              <p><strong>Name:</strong> {name}</p>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={handleCloseDialog}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel onClick={() => setIsDialogOpen(false)}>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleConfirm}>Confirm</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={isMessageDialogOpen} onOpenChange={setIsMessageDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Notification</AlertDialogTitle>
+            <AlertDialogDescription>
+              <p>{message}</p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={handleMessageDialogClose}>Ok</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

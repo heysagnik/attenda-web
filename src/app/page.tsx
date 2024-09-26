@@ -107,7 +107,10 @@ export default function Home() {
           <div className="flex items-center">
             <span className="mr-2">{user?.email}</span>
             <button
-              onClick={() => supabase.auth.signOut()}
+              onClick={async () => {
+                await supabase.auth.signOut();
+                router.push('/login');
+              }}
               className="bg-white text-blue-600 px-4 py-2 rounded"
             >
               Logout

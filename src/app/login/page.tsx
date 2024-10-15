@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/lib/supabaseClient";
+import Placeholder from "@/app/placeholder.svg";
 
 // A login page with two columns. The first column has the login form with email and password.
 // There's a Forgot your password link and a link to sign up if you do not have an account.
@@ -81,7 +82,7 @@ function Login() {
       </div>
       <div className="hidden bg-muted lg:block">
         <Image
-          src="/placeholder.svg"
+          src={Placeholder.src}
           alt="Image"
           width="1920"
           height="1080"
